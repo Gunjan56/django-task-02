@@ -78,15 +78,17 @@ WSGI_APPLICATION = 'RBAC.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 DATABASES = {
     'default': {  
-        'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'tasks',  
-        'USER': 'root',  
-        'PASSWORD': 'gunjan12345',  
-        'HOST': 'localhost',  
-        'PORT': '3306',  
+        'ENGINE': os.getenv('ENGINE'),  
+        'NAME': os.getenv('NAME'),  
+        'USER': os.getenv('USER'),  
+        'PASSWORD': os.getenv('PASSWORD'),  
+        'HOST': os.getenv('HOST'),  
+        'PORT': os.getenv('PORT'),  
     },
     
 }
