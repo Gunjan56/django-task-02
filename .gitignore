@@ -1,6 +1,6 @@
-0001_initial.py
-0002_alter_customuser_username.py
-0002_task_assignor.py
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
 __pycache__
 venv
 .env

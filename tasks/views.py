@@ -1,52 +1,69 @@
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from users.models import CustomUser
+from rest_framework.response import Response
+from rest_framework import status
 from .models import Task
 from .serializers import TaskSerializer
 
 class TaskListCreateAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        tasks = Task.objects.all()
+        tasks = Task.objects.filter(assignee=request.user)
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(assignee=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TaskRetrieveUpdateDestroyAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get_object(self, pk):
         return get_object_or_404(Task, pk=pk)
 
     def get(self, request, pk):
         task = self.get_object(pk)
-        serializer = TaskSerializer(task)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if task.assignee == request.user:
+            serializer = TaskSerializer(task)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'You do not have permission to access this task'}, status=status.HTTP_403_FORBIDDEN)
 
     def put(self, request, pk):
         task = self.get_object(pk)
-        serializer = TaskSerializer(task, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if task.assignee == request.user:
+            serializer = TaskSerializer(task, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'You do not have permission to update this task'}, status=status.HTTP_403_FORBIDDEN)
 
     def patch(self, request, pk):
         task = self.get_object(pk)
-        serializer = TaskSerializer(task, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if task.assignee == request.user:
+            serializer = TaskSerializer(task, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'You do not have permission to update this task'}, status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, pk):
         task = self.get_object(pk)
-        task.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
+        if task.assignee == request.user:
+            task.delete()
+            return Response({"message": "task deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'error': 'You do not have permission to delete this task'}, status=status.HTTP_403_FORBIDDEN)
