@@ -6,16 +6,19 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Task
 from .serializers import TaskSerializer
+from users.utils.decorators import manager_required, employee_required
 
 class TaskListCreateAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
+     
+    @manager_required
     def get(self, request):
         tasks = Task.objects.filter(assignee=request.user)
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
+    @manager_required
     def post(self, request):
         serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
@@ -29,7 +32,9 @@ class TaskRetrieveUpdateDestroyAPIView(APIView):
 
     def get_object(self, pk):
         return get_object_or_404(Task, pk=pk)
+    
 
+    @employee_required
     def get(self, request, pk):
         task = self.get_object(pk)
         if task.assignee == request.user:
@@ -37,7 +42,8 @@ class TaskRetrieveUpdateDestroyAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'You do not have permission to access this task'}, status=status.HTTP_403_FORBIDDEN)
-
+   
+    @manager_required
     def put(self, request, pk):
         task = self.get_object(pk)
         if task.assignor == request.user:
@@ -48,7 +54,8 @@ class TaskRetrieveUpdateDestroyAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'You do not have permission to update this task'}, status=status.HTTP_403_FORBIDDEN)
-
+    
+    @manager_required
     def delete(self, request, pk):
         task = self.get_object(pk)
         if task.assignor == request.user:
@@ -61,6 +68,7 @@ class TaskUpdateStatusAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @employee_required
     def patch(self, request, pk):
         task = get_object_or_404(Task, pk=pk)
         if task.assignee == request.user:

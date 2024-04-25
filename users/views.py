@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser
 from .serializers import UserSerializer
-
+from users.utils.decorators import manager_required, employee_required
 
 class UserRegistrationAPIView(APIView):
     def post(self, request):
@@ -45,26 +45,24 @@ class UserRetrieveUpdateDestroyAPIView(APIView):
     def get_object(self, pk):
         return get_object_or_404(CustomUser, pk=pk)
 
+    @manager_required  
     def get(self, request, pk):
         user = self.get_object(pk)
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+ 
 
+    @manager_required
     def put(self, request, pk):
         user = self.get_object(pk)
-        if user == request.user:
-            serializer = UserSerializer(user, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({'error': 'You do not have permission to update this user'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = UserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @manager_required  
     def delete(self, request, pk):
         user = self.get_object(pk)
-        if user == request.user:
-            user.delete()
-            return Response({"message": "user deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response({'error': 'You do not have permission to delete this user'}, status=status.HTTP_403_FORBIDDEN)
+        user.delete()
+        return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
