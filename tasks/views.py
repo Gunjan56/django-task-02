@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Task
 from .serializers import TaskSerializer
-from users.utils.decorators import manager_required, employee_required
+from users.utils.decorators import manager_required, employee_required, manager_and_employee_required
 
 class TaskListCreateAPIView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -33,8 +33,8 @@ class TaskRetrieveUpdateDestroyAPIView(APIView):
     def get_object(self, pk):
         return get_object_or_404(Task, pk=pk)
     
-
-    @employee_required
+     
+    @manager_and_employee_required
     def get(self, request, pk):
         task = self.get_object(pk)
         if task.assignee == request.user:
@@ -42,8 +42,9 @@ class TaskRetrieveUpdateDestroyAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'You do not have permission to access this task'}, status=status.HTTP_403_FORBIDDEN)
-   
-    @manager_required
+    
+    
+    @manager_and_employee_required
     def put(self, request, pk):
         task = self.get_object(pk)
         if task.assignor == request.user:
