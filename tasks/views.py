@@ -24,7 +24,7 @@ class TaskListCreateAPIView(APIView):
         if serializer.is_valid():
             serializer.save(assignor=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error: only manager can assign tasks"}, status=status.HTTP_400_BAD_REQUEST)
 
 class TaskRetrieveUpdateDestroyAPIView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -73,8 +73,26 @@ class TaskUpdateStatusAPIView(APIView):
     def patch(self, request, pk):
         task = get_object_or_404(Task, pk=pk)
         if task.assignee == request.user:
-            task.status = request.data.get('status')
-            task.save()
-            return Response({'message': 'Task status updated successfully'}, status=status.HTTP_200_OK)
+            new_status = request.data.get('status')
+            if new_status in ['completed', 'in_progress']:
+                task.status = new_status
+                task.save()
+                return Response({'message': f'Task status updated to {new_status} successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Invalid status. Status must be "completed" or "in_progress"'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'You do not have permission to update the status of this task'}, status=status.HTTP_403_FORBIDDEN)
+
+    @manager_required
+    def put(self, request, pk):
+        task = get_object_or_404(Task, pk=pk)
+        if task.status == 'completed':
+            feedback = request.data.get('feedback')
+            if feedback:
+                task.feedback = feedback
+                task.save()
+                return Response({'message': 'Feedback added successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Feedback is required'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'You can only provide feedback for completed tasks'}, status=status.HTTP_400_BAD_REQUEST)

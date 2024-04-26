@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser
 from .serializers import UserSerializer
-from users.utils.decorators import  manager_and_employee_required, manager_required
+from users.utils.decorators import manager_required, employee_required, manager_and_employee_required
+
 class UserRegistrationAPIView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -63,7 +64,6 @@ class UserRetrieveUpdateDestroyAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
     @manager_required  
     def delete(self, request, pk):
