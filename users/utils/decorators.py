@@ -32,7 +32,7 @@ def manager_and_employee_required(func):
     @wraps(func)
     def wrapper(self, request, *args, **kwargs):
         user = request.user
-        if user.role != CustomUser.EMPLOYEE and user.role != CustomUser.MANAGER:
+        if user.role not in [CustomUser.EMPLOYEE, CustomUser.MANAGER]:
             return Response({'error': 'You do not have permission to access'}, status=status.HTTP_403_FORBIDDEN)
         return func(self, request, *args, **kwargs)
     return wrapper
