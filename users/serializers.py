@@ -6,8 +6,13 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'username', 'email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}
-        
+
     def create(self, validated_data):
-        role = validated_data['employee']    
+        role = validated_data.pop('role', CustomUser.EMPLOYEE)
+        if role != CustomUser.EMPLOYEE:
+            role = CustomUser.EMPLOYEE
         user = CustomUser.objects.create_user(**validated_data)
+        user.role = role
+        user.save()
         return user
+
