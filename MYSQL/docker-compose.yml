@@ -1,0 +1,7 @@
+version: "3.9"
+
+services:
+  database:
+    build: .
+    ports:
+      - "3306:3306"
